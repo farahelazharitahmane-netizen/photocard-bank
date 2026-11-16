@@ -378,6 +378,35 @@
   button.primary:hover, button.secondary:hover { transform: translateY(-2px); }
   button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
 
+  /* ---------- Filtres ---------- */
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .filters label {
+    font-size: 0.75rem;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .filters select {
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    border-radius: 12px;
+    width: 100%;
+  }
+
+  .filter-count {
+    margin: 0 0 14px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    opacity: 0.7;
+    min-height: 1em;
+  }
+
   /* ---------- Listes ---------- */
   .list { display: grid; gap: 12px; }
 
@@ -647,6 +676,8 @@
       <h1>Collection</h1>
       <p class="subtitle">Toutes tes cartes, de la plus récente à la plus ancienne.</p>
     </header>
+    <div id="collFilters" class="filters"></div>
+    <p id="collCount" class="filter-count"></p>
     <div id="collection" class="list"></div>
   </section>
 
@@ -675,6 +706,8 @@
       <button type="submit" class="primary">Ajouter aux souhaits</button>
     </form>
 
+    <div id="wishFilters" class="filters"></div>
+    <p id="wishCount" class="filter-count"></p>
     <div id="wishList" class="list"></div>
   </section>
 
@@ -698,8 +731,12 @@
   let pendingPhoto = null;
   let lastAddedId = null;
 
+  // Valeurs des filtres choisis par l'utilisateur
+  const filters = { group: "", member: "", origin: "", type: "", wGroup: "", wStatus: "" };
+
   const $ = (id) => document.getElementById(id);
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const unique = (arr) => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
 
   /* Stockage local (IndexedDB) : tient bien les photos, contrairement à localStorage */
   const DB_NAME = "photocard-bank";
@@ -874,6 +911,80 @@
   }
 
   /* =========================================================
+     Filtres : les options viennent de ce qui est enregistré
+     ========================================================= */
+  function makeSelect(labelText, key, options, onChange) {
+    const label = document.createElement("label");
+    label.textContent = labelText;
+
+    const select = document.createElement("select");
+    const all = document.createElement("option");
+    all.value = "";
+    all.textContent = "Tous";
+    select.append(all);
+
+    options.forEach((o) => {
+      const opt = document.createElement("option");
+      opt.value = o;
+      opt.textContent = o;
+      select.append(opt);
+    });
+
+    // Si la valeur choisie n'existe plus (ex. plus aucune carte de ce groupe), on revient à « Tous »
+    select.value = options.includes(filters[key]) ? filters[key] : "";
+    filters[key] = select.value;
+
+    select.addEventListener("change", () => {
+      filters[key] = select.value;
+      onChange();
+    });
+
+    label.append(select);
+    return label;
+  }
+
+  function refreshColl() {
+    renderCollFilters();
+    renderCollection();
+  }
+
+  function refreshWish() {
+    renderWishFilters();
+    renderWishes();
+  }
+
+  function renderCollFilters() {
+    const box = $("collFilters");
+    box.innerHTML = "";
+    const c = state.collection;
+    const groups = unique(c.map((x) => x.group));
+    const members = unique(
+      c.filter((x) => !filters.group || x.group === filters.group).map((x) => x.member)
+    );
+    const origins = unique(c.map((x) => x.origin));
+    const types = unique(c.map((x) => x.type));
+
+    box.append(
+      makeSelect("Groupe", "group", groups, refreshColl),
+      makeSelect("Membre", "member", members, refreshColl),
+      makeSelect("Origine", "origin", origins, refreshColl),
+      makeSelect("Type", "type", types, refreshColl)
+    );
+  }
+
+  function renderWishFilters() {
+    const box = $("wishFilters");
+    box.innerHTML = "";
+    const groups = unique(state.wishes.map((w) => w.group));
+    const statuses = STATUSES.filter((s) => state.wishes.some((w) => w.status === s));
+
+    box.append(
+      makeSelect("Groupe", "wGroup", groups, refreshWish),
+      makeSelect("Statut", "wStatus", statuses, refreshWish)
+    );
+  }
+
+  /* =========================================================
      Collection
      ========================================================= */
   function toggleFav(id, button) {
@@ -891,13 +1002,33 @@
 
   function renderCollection() {
     const box = $("collection");
+    const count = $("collCount");
     box.classList.add("stagger");
+    box.innerHTML = "";
+
     if (state.collection.length === 0) {
+      count.textContent = "";
       box.innerHTML = '<div class="empty">Ta collection est vide. Ajoute ta première carte !</div>';
       return;
     }
-    box.innerHTML = "";
-    [...state.collection].reverse().forEach((c, i) => {
+
+    const visible = state.collection.filter(
+      (c) =>
+        (!filters.group || c.group === filters.group) &&
+        (!filters.member || c.member === filters.member) &&
+        (!filters.origin || c.origin === filters.origin) &&
+        (!filters.type || c.type === filters.type)
+    );
+
+    const active = Object.values(filters).slice(0, 4).some(Boolean);
+    count.textContent = active ? `${visible.length} carte(s) sur ${state.collection.length}` : "";
+
+    if (visible.length === 0) {
+      box.innerHTML = '<div class="empty">Aucune carte ne correspond à ces filtres.</div>';
+      return;
+    }
+
+    [...visible].reverse().forEach((c, i) => {
       const item = document.createElement("div");
       item.className = "card-item";
       item.style.setProperty("--i", i);
@@ -936,13 +1067,31 @@
      ========================================================= */
   function renderWishes() {
     const box = $("wishList");
+    const count = $("wishCount");
     box.classList.add("stagger");
+    box.innerHTML = "";
+
     if (state.wishes.length === 0) {
+      count.textContent = "";
       box.innerHTML = '<div class="empty">Aucune carte recherchée pour l\'instant.</div>';
       return;
     }
-    box.innerHTML = "";
-    state.wishes.forEach((w, i) => {
+
+    const visible = state.wishes.filter(
+      (w) =>
+        (!filters.wGroup || w.group === filters.wGroup) &&
+        (!filters.wStatus || w.status === filters.wStatus)
+    );
+
+    const active = !!(filters.wGroup || filters.wStatus);
+    count.textContent = active ? `${visible.length} souhait(s) sur ${state.wishes.length}` : "";
+
+    if (visible.length === 0) {
+      box.innerHTML = '<div class="empty">Aucun souhait ne correspond à ces filtres.</div>';
+      return;
+    }
+
+    visible.forEach((w, i) => {
       const item = document.createElement("div");
       item.className = "card-item";
       item.style.setProperty("--i", i);
@@ -965,7 +1114,7 @@
       select.addEventListener("change", () => {
         w.status = select.value;
         save();
-        renderWishes();
+        refreshWish();
       });
       meta.append(select);
 
@@ -1029,7 +1178,7 @@
     save();
     e.target.reset();
     showToast("Souhait ajouté");
-    renderWishes();
+    refreshWish();
   });
 
   $("cardForm").addEventListener("submit", (e) => {
@@ -1102,8 +1251,8 @@
      ========================================================= */
   function renderAll() {
     renderHome();
-    renderCollection();
-    renderWishes();
+    refreshColl();
+    refreshWish();
   }
 
   async function init() {
