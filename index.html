@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photocard Bank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Righteous&family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --lilac: #C9B6FF;
+    --bubblegum: #FF9EC7;
+    --ice: #A8E6FF;
+    --mint: #C8FFE4;
+    --gold: #FFE38A;
+    --peach: #FFD2B8;
+    --ink: #2B1B4A;
+    --paper: #FFF8FC;
+    --chrome: linear-gradient(135deg, #fff 0%, #d9d4ff 30%, #ffd6ea 55%, #bff2ff 75%, #fff 100%);
+    --radius: 22px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Quicksand", system-ui, sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, var(--ice) 0, transparent 35%),
+      radial-gradient(circle at 85% 20%, var(--bubblegum) 0, transparent 30%),
+      radial-gradient(circle at 50% 100%, var(--lilac) 0, transparent 45%),
+      var(--paper);
+    padding: 24px 16px 100px;
+  }
+
+  main { max-width: 440px; margin: 0 auto; }
+
+  h1, h2, .display {
+    font-family: "Righteous", cursive;
+    font-weight: 400;
+    margin: 0;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+    background: linear-gradient(90deg, #7b5cff, #ff5fa8, #3cc8ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  h2 { font-size: 1.4rem; }
+
+  .subtitle { margin: 4px 0 20px; font-weight: 600; opacity: 0.7; }
+
+  /* ---------- Navigation ---------- */
+  .screen { display: none; }
+
+  .screen.active {
+    display: block;
+    animation: screenIn 0.45s ease backwards;
+  }
+
+  nav.tabs {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 2px solid #fff;
+    box-shadow: 0 10px 30px rgba(123, 92, 255, 0.25);
+    z-index: 10;
+  }
+
+  nav.tabs button {
+    font-family: "Righteous", cursive;
+    font-size: 0.9rem;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  nav.tabs button[aria-selected="true"] {
+    background: linear-gradient(90deg, #7b5cff, #ff5fa8, #3cc8ff);
+    color: #fff;
+  }
+
+  nav.tabs button:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  /* ---------- Accueil ---------- */
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+
+  .stat {
+    background: rgba(255, 255, 255, 0.75);
+    border: 2px solid #fff;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(43, 27, 74, 0.07);
+  }
+
+  .stat .display { font-size: 1.8rem; }
+  .stat span { font-size: 0.85rem; font-weight: 700; opacity: 0.7; }
+
+  .home-section { margin-bottom: 28px; }
+  .home-section .head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .top-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .top-card {
+    position: relative;
+    aspect-ratio: 5 / 7.4;
+    border-radius: 16px;
+    padding: 6px;
+    background: var(--chrome);
+    box-shadow: 0 10px 24px rgba(123, 92, 255, 0.25);
+    transition: transform 0.3s ease;
+    animation: flipIn 0.6s ease backwards;
+    animation-delay: calc(var(--i, 0) * 120ms);
+    overflow: hidden;
+  }
+
+  .top-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.7) 50%, transparent 60%);
+    transform: translateX(-100%);
+    pointer-events: none;
+  }
+
+  .top-card:hover { transform: rotate(-2deg) scale(1.03); }
+  .top-card:hover::after { transform: translateX(100%); transition: transform 0.8s ease; }
+
+  .top-card .inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 11px;
+    background: linear-gradient(160deg, var(--lilac), var(--bubblegum) 55%, var(--ice));
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: flex-end;
+    padding: 6px;
+  }
+
+  .top-card .label {
+    width: 100%;
+    background: rgba(43, 27, 74, 0.45);
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .top-card .rank {
+    position: absolute;
+    top: -8px;
+    left: -6px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    font-family: "Righteous", cursive;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+    z-index: 1;
+  }
+
+  .backup {
+    display: grid;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 2px solid #fff;
+    border-radius: var(--radius);
+    padding: 18px;
+  }
+
+  .backup p { margin: 0; font-size: 0.85rem; font-weight: 600; opacity: 0.75; }
+
+  .empty {
+    padding: 18px;
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    font-weight: 600;
+    opacity: 0.75;
+  }
+
+  /* ---------- Aperçu carte ---------- */
+  .preview {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 5 / 7.4;
+    max-width: 260px;
+    margin: 0 auto 24px;
+    border-radius: var(--radius);
+    padding: 10px;
+    background: var(--chrome);
+    box-shadow: 0 14px 40px rgba(123, 92, 255, 0.35);
+    transform: rotate(-2deg);
+    transition: transform 0.4s ease;
+  }
+
+  .preview:hover { transform: rotate(0deg) scale(1.02); }
+
+  .preview-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(160deg, var(--lilac), var(--bubblegum) 55%, var(--ice));
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+    color: #fff;
+    position: relative;
+  }
+
+  .preview-inner img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .preview-inner .shine {
+    position: absolute;
+    inset: -20%;
+    background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.55) 50%, transparent 60%);
+    pointer-events: none;
+    animation: sweep 5s ease-in-out infinite;
+  }
+
+  .preview-text {
+    position: relative;
+    background: rgba(43, 27, 74, 0.35);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 10px 12px;
+  }
+
+  .preview-text strong { display: block; font-family: "Righteous", cursive; font-size: 1.2rem; font-weight: 400; }
+  .preview-text span { font-size: 0.85rem; font-weight: 600; }
+
+  /* ---------- Formulaires ---------- */
+  form.card-form {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 2px solid #fff;
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: 0 8px 30px rgba(43, 27, 74, 0.08);
+    display: grid;
+    gap: 14px;
+  }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  label { display: grid; gap: 6px; font-size: 0.85rem; font-weight: 700; }
+
+  input, select, textarea {
+    font: inherit;
+    font-weight: 600;
+    color: var(--ink);
+    background: #fff;
+    border: 2px solid #eadcff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  textarea { resize: vertical; min-height: 60px; }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--bubblegum);
+    box-shadow: 0 0 0 4px rgba(255, 158, 199, 0.35);
+  }
+
+  fieldset { border: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  legend { font-size: 0.85rem; font-weight: 700; padding: 0; margin-bottom: 6px; }
+
+  .origin-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .origin-chips input { position: absolute; opacity: 0; pointer-events: none; }
+
+  .origin-chips label {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 2px solid #eadcff;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: transform 0.2s ease;
+  }
+
+  .origin-chips label:active { transform: scale(0.95); }
+
+  .origin-chips label:has(input:checked) {
+    background: linear-gradient(90deg, #7b5cff, #ff5fa8);
+    border-color: transparent;
+    color: #fff;
+  }
+
+  .photo-drop {
+    border: 2px dashed var(--ice);
+    border-radius: 14px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    background: rgba(168, 230, 255, 0.15);
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .photo-drop input { display: none; }
+
+  button.primary, button.secondary {
+    font: inherit;
+    font-family: "Righteous", cursive;
+    font-size: 1.05rem;
+    border: none;
+    border-radius: 999px;
+    padding: 14px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+
+  button.primary {
+    color: #fff;
+    background: linear-gradient(90deg, #7b5cff, #ff5fa8, #3cc8ff);
+    box-shadow: 0 8px 20px rgba(255, 95, 168, 0.35);
+  }
+
+  button.secondary {
+    color: var(--ink);
+    background: #fff;
+    border: 2px solid #eadcff;
+    font-size: 0.95rem;
+    padding: 12px;
+    text-align: center;
+    display: block;
+  }
+
+  button.primary:hover, button.secondary:hover { transform: translateY(-2px); }
+  button:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+  /* ---------- Listes ---------- */
+  .list { display: grid; gap: 12px; }
+
+  .stagger > * {
+    animation: rise 0.5s ease backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  .card-item {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    background: #fff;
+    border-radius: 18px;
+    padding: 10px;
+    box-shadow: 0 4px 14px rgba(43, 27, 74, 0.06);
+  }
+
+  .card-item.pop {
+    animation: pop 0.65s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+  }
+
+  .thumb {
+    width: 56px;
+    height: 78px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: linear-gradient(160deg, var(--lilac), var(--ice));
+    background-size: cover;
+    background-position: center;
+  }
+
+  .card-item .meta { flex: 1; min-width: 0; }
+  .card-item .meta strong { display: block; font-size: 1rem; }
+  .card-item .meta span { font-size: 0.8rem; opacity: 0.75; }
+
+  .tag {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--mint);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .price { font-weight: 700; font-size: 0.95rem; }
+
+  .fav-btn, .small-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: var(--ink);
+    padding: 4px;
+    border-radius: 8px;
+  }
+
+  .fav-btn[aria-pressed="true"] { color: #ff5fa8; }
+  .fav-btn.beat { animation: beat 0.45s ease; }
+
+  .small-btn {
+    font-family: "Righteous", cursive;
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7b5cff, #ff5fa8);
+    color: #fff;
+  }
+
+  .wish-status {
+    margin-top: 6px;
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 2px solid #eadcff;
+  }
+
+  /* ---------- Notification ---------- */
+  #toast {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translate(-50%, -140%);
+    background: var(--ink);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 10px 30px rgba(43, 27, 74, 0.3);
+    transition: transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+    z-index: 20;
+    max-width: 90vw;
+    text-align: center;
+  }
+
+  #toast.show { transform: translate(-50%, 0); }
+
+  /* ---------- Animations ---------- */
+  @keyframes screenIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes flipIn {
+    from { opacity: 0; transform: perspective(600px) rotateY(-90deg); }
+    to { opacity: 1; transform: none; }
+  }
+
+  @keyframes pop {
+    0% { opacity: 0; transform: scale(0.6) rotate(-8deg); }
+    60% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+    100% { opacity: 1; transform: none; }
+  }
+
+  @keyframes beat {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.5); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes sweep {
+    0%, 100% { transform: translateX(-30%); }
+    50% { transform: translateX(30%); }
+  }
+
+  @media (max-width: 380px) {
+    .row { grid-template-columns: 1fr; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ACCUEIL -->
+  <section class="screen active" id="screen-home">
+    <header>
+      <h1>Photocard Bank</h1>
+      <p class="subtitle">Ta collection en un coup d'œil.</p>
+    </header>
+
+    <div class="stats">
+      <div class="stat"><div class="display" id="statCount">0</div><span>cartes</span></div>
+      <div class="stat"><div class="display" id="statSpent">0 €</div><span>dépensé</span></div>
+    </div>
+
+    <div class="home-section">
+      <div class="head"><h2>Mes favorites</h2><span class="subtitle" style="margin:0">top 3</span></div>
+      <div class="top-row" id="topFav"></div>
+    </div>
+
+    <div class="home-section">
+      <div class="head"><h2>Les plus chères</h2><span class="subtitle" style="margin:0">top 3</span></div>
+      <div class="top-row" id="topPrice"></div>
+    </div>
+
+    <div class="home-section backup">
+      <h2>Sauvegarde</h2>
+      <p>Tes données restent sur cet appareil. Exporte-les de temps en temps pour ne rien perdre.</p>
+      <button type="button" class="secondary" id="exportBtn">Exporter ma collection</button>
+      <button type="button" class="secondary" id="importBtn">Importer une sauvegarde</button>
+      <input type="file" id="importFile" accept="application/json,.json" hidden>
+    </div>
+  </section>
+
+  <!-- AJOUT -->
+  <section class="screen" id="screen-add">
+    <header>
+      <h1>Ajouter</h1>
+      <p class="subtitle">Une nouvelle carte dans ta collection.</p>
+    </header>
+
+    <div class="preview" aria-hidden="true">
+      <div class="preview-inner">
+        <img id="previewImg" alt="" hidden>
+        <div class="shine"></div>
+        <div class="preview-text">
+          <strong id="pvMember">Membre</strong>
+          <span id="pvGroup">Groupe · Album</span>
+        </div>
+      </div>
+    </div>
+
+    <form id="cardForm" class="card-form">
+      <div class="row">
+        <label>Groupe
+          <input id="group" name="group" required placeholder="ex. aespa">
+        </label>
+        <label>Membre
+          <input id="member" name="member" required placeholder="ex. Karina">
+        </label>
+      </div>
+
+      <label>Album ou produit
+        <input id="album" name="album" placeholder="ex. Armageddon">
+      </label>
+
+      <div class="row">
+        <label>Type de carte
+          <select id="type" name="type">
+            <option>Standard</option>
+            <option>POB</option>
+            <option>Version limitée</option>
+            <option>Carte de concert</option>
+          </select>
+        </label>
+        <label>État
+          <select id="state" name="state">
+            <option>Neuve</option>
+            <option>Très bon état</option>
+            <option>Abîmée</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset>
+        <legend>Comment l'avez-vous obtenue ?</legend>
+        <div class="origin-chips">
+          <label><input type="radio" name="origin" value="Album" checked>Album</label>
+          <label><input type="radio" name="origin" value="Achat individuel">Achat individuel</label>
+          <label><input type="radio" name="origin" value="Échange">Échange</label>
+          <label><input type="radio" name="origin" value="Cadeau">Cadeau</label>
+          <label><input type="radio" name="origin" value="POB">POB</label>
+        </div>
+      </fieldset>
+
+      <div class="row">
+        <label>Prix payé (€)
+          <input id="price" name="price" type="number" min="0" step="0.5" placeholder="0">
+        </label>
+        <label>Date
+          <input id="date" name="date" type="date">
+        </label>
+      </div>
+
+      <label>Note
+        <textarea id="note" name="note" placeholder="Où, comment, avec qui..."></textarea>
+      </label>
+
+      <label class="photo-drop" for="photo">
+        <span id="photoLabel">Ajouter une photo (facultatif)</span>
+        <input id="photo" type="file" accept="image/*">
+      </label>
+
+      <button type="submit" class="primary">Ajouter à ma collection</button>
+    </form>
+  </section>
+
+  <!-- COLLECTION -->
+  <section class="screen" id="screen-collection">
+    <header>
+      <h1>Collection</h1>
+      <p class="subtitle">Toutes tes cartes, de la plus récente à la plus ancienne.</p>
+    </header>
+    <div id="collection" class="list"></div>
+  </section>
+
+  <!-- SOUHAITS -->
+  <section class="screen" id="screen-wish">
+    <header>
+      <h1>Souhaits</h1>
+      <p class="subtitle">Les cartes que tu cherches encore.</p>
+    </header>
+
+    <form id="wishForm" class="card-form" style="margin-bottom:24px">
+      <div class="row">
+        <label>Groupe
+          <input id="wGroup" required placeholder="ex. aespa">
+        </label>
+        <label>Membre
+          <input id="wMember" required placeholder="ex. Winter">
+        </label>
+      </div>
+      <label>Album ou produit
+        <input id="wAlbum" placeholder="ex. Winter Solo">
+      </label>
+      <label>Prix maximum (€)
+        <input id="wMax" type="number" min="0" step="0.5" placeholder="0">
+      </label>
+      <button type="submit" class="primary">Ajouter aux souhaits</button>
+    </form>
+
+    <div id="wishList" class="list"></div>
+  </section>
+
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-target="screen-home" aria-selected="true">Accueil</button>
+  <button role="tab" data-target="screen-add" aria-selected="false">Ajouter</button>
+  <button role="tab" data-target="screen-collection" aria-selected="false">Collection</button>
+  <button role="tab" data-target="screen-wish" aria-selected="false">Souhaits</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  /* =========================================================
+     Données
+     ========================================================= */
+  const state = { collection: [], wishes: [] };
+  const STATUSES = ["À chercher", "Trouvée", "En négociation"];
+  let pendingPhoto = null;
+  let lastAddedId = null;
+
+  const $ = (id) => document.getElementById(id);
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  /* Stockage local (IndexedDB) : tient bien les photos, contrairement à localStorage */
+  const DB_NAME = "photocard-bank";
+  const STORE = "kv";
+
+  function openDB() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => req.result.createObjectStore(STORE);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  async function dbPut(key, value) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite");
+      tx.objectStore(STORE).put(value, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  async function dbGet(key) {
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly");
+      const req = tx.objectStore(STORE).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function save() {
+    dbPut("state", { collection: state.collection, wishes: state.wishes })
+      .catch(() => showToast("Impossible d'enregistrer sur cet appareil"));
+  }
+
+  /* Réduit la photo pour qu'elle reste légère à stocker */
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const max = 600;
+          const scale = Math.min(1, max / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.82));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /* =========================================================
+     Notification
+     ========================================================= */
+  let toastTimer = null;
+  function showToast(message) {
+    const toast = $("toast");
+    toast.textContent = message;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+  }
+
+  /* =========================================================
+     Navigation
+     ========================================================= */
+  function goTo(target) {
+    document.querySelectorAll("nav.tabs button").forEach((b) =>
+      b.setAttribute("aria-selected", String(b.dataset.target === target))
+    );
+    document.querySelectorAll(".screen").forEach((s) =>
+      s.classList.toggle("active", s.id === target)
+    );
+    renderAll();
+  }
+
+  document.querySelectorAll("nav.tabs button").forEach((btn) =>
+    btn.addEventListener("click", () => goTo(btn.dataset.target))
+  );
+
+  /* =========================================================
+     Aperçu et photo
+     ========================================================= */
+  function updatePreview() {
+    const member = $("member").value.trim() || "Membre";
+    const group = $("group").value.trim() || "Groupe";
+    const album = $("album").value.trim();
+    $("pvMember").textContent = member;
+    $("pvGroup").textContent = album ? `${group} · ${album}` : group;
+  }
+
+  ["group", "member", "album"].forEach((id) => $(id).addEventListener("input", updatePreview));
+
+  $("photo").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      pendingPhoto = await compressImage(file);
+      $("previewImg").src = pendingPhoto;
+      $("previewImg").hidden = false;
+      $("photoLabel").textContent = "Photo ajoutée ✓";
+    } catch {
+      showToast("Cette photo n'a pas pu être chargée");
+    }
+  });
+
+  function resetForm() {
+    $("cardForm").reset();
+    pendingPhoto = null;
+    $("previewImg").removeAttribute("src");
+    $("previewImg").hidden = true;
+    $("photoLabel").textContent = "Ajouter une photo (facultatif)";
+    updatePreview();
+  }
+
+  /* =========================================================
+     Accueil
+     ========================================================= */
+  function renderTop(container, items, valueLabel) {
+    container.innerHTML = "";
+    if (items.length === 0) {
+      container.innerHTML = '<div class="empty" style="grid-column:1/-1">Rien à afficher pour l\'instant.</div>';
+      return;
+    }
+    items.forEach((c, i) => {
+      const card = document.createElement("div");
+      card.className = "top-card";
+      card.style.setProperty("--i", i);
+
+      const rank = document.createElement("div");
+      rank.className = "rank";
+      rank.textContent = i + 1;
+
+      const inner = document.createElement("div");
+      inner.className = "inner";
+      if (c.photo) inner.style.backgroundImage = `url("${c.photo}")`;
+
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = `${c.member}${valueLabel(c) ? " · " + valueLabel(c) : ""}`;
+
+      inner.append(label);
+      card.append(rank, inner);
+      container.append(card);
+    });
+  }
+
+  function renderHome() {
+    const total = state.collection.reduce((sum, c) => sum + (c.price || 0), 0);
+    $("statCount").textContent = state.collection.length;
+    $("statSpent").textContent = `${total.toFixed(2)} €`;
+
+    const favs = state.collection.filter((c) => c.favorite).slice(0, 3);
+    renderTop($("topFav"), favs, () => "");
+
+    const expensive = state.collection
+      .filter((c) => c.price > 0)
+      .sort((a, b) => b.price - a.price)
+      .slice(0, 3);
+    renderTop($("topPrice"), expensive, (c) => `${c.price.toFixed(0)} €`);
+  }
+
+  /* =========================================================
+     Collection
+     ========================================================= */
+  function toggleFav(id, button) {
+    const card = state.collection.find((c) => c.id === id);
+    if (!card) return;
+    card.favorite = !card.favorite;
+    button.setAttribute("aria-pressed", String(card.favorite));
+    button.textContent = card.favorite ? "♥" : "♡";
+    button.classList.remove("beat");
+    void button.offsetWidth; // relance l'animation
+    button.classList.add("beat");
+    save();
+    renderHome();
+  }
+
+  function renderCollection() {
+    const box = $("collection");
+    box.classList.add("stagger");
+    if (state.collection.length === 0) {
+      box.innerHTML = '<div class="empty">Ta collection est vide. Ajoute ta première carte !</div>';
+      return;
+    }
+    box.innerHTML = "";
+    [...state.collection].reverse().forEach((c, i) => {
+      const item = document.createElement("div");
+      item.className = "card-item";
+      item.style.setProperty("--i", i);
+      if (c.id === lastAddedId) item.classList.add("pop");
+
+      const thumb = document.createElement("div");
+      thumb.className = "thumb";
+      if (c.photo) thumb.style.backgroundImage = `url("${c.photo}")`;
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<strong></strong><span></span><br><span class="tag"></span>`;
+      meta.querySelector("strong").textContent = `${c.member} · ${c.group}`;
+      meta.querySelector("span").textContent = c.album || "Sans album";
+      meta.querySelector(".tag").textContent = c.origin;
+
+      const price = document.createElement("div");
+      price.className = "price";
+      price.textContent = c.price ? `${c.price.toFixed(2)} €` : "—";
+
+      const fav = document.createElement("button");
+      fav.className = "fav-btn";
+      fav.setAttribute("aria-pressed", String(!!c.favorite));
+      fav.setAttribute("aria-label", "Ajouter aux favorites");
+      fav.textContent = c.favorite ? "♥" : "♡";
+      fav.addEventListener("click", () => toggleFav(c.id, fav));
+
+      item.append(thumb, meta, price, fav);
+      box.append(item);
+    });
+    lastAddedId = null;
+  }
+
+  /* =========================================================
+     Souhaits
+     ========================================================= */
+  function renderWishes() {
+    const box = $("wishList");
+    box.classList.add("stagger");
+    if (state.wishes.length === 0) {
+      box.innerHTML = '<div class="empty">Aucune carte recherchée pour l\'instant.</div>';
+      return;
+    }
+    box.innerHTML = "";
+    state.wishes.forEach((w, i) => {
+      const item = document.createElement("div");
+      item.className = "card-item";
+      item.style.setProperty("--i", i);
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.innerHTML = `<strong></strong><span></span>`;
+      meta.querySelector("strong").textContent = `${w.member} · ${w.group}`;
+      meta.querySelector("span").textContent = w.album || "Sans album";
+
+      const select = document.createElement("select");
+      select.className = "wish-status";
+      select.setAttribute("aria-label", "Statut de la carte");
+      STATUSES.forEach((s) => {
+        const opt = document.createElement("option");
+        opt.textContent = s;
+        if (s === w.status) opt.selected = true;
+        select.append(opt);
+      });
+      select.addEventListener("change", () => {
+        w.status = select.value;
+        save();
+        renderWishes();
+      });
+      meta.append(select);
+
+      const max = document.createElement("div");
+      max.className = "price";
+      max.textContent = w.max ? `max ${w.max.toFixed(2)} €` : "—";
+
+      item.append(meta, max);
+
+      if (w.status === "Trouvée") {
+        const move = document.createElement("button");
+        move.className = "small-btn";
+        move.textContent = "Ajouter";
+        move.addEventListener("click", () => moveToCollection(w.id));
+        item.append(move);
+      }
+
+      box.append(item);
+    });
+  }
+
+  function moveToCollection(id) {
+    const index = state.wishes.findIndex((w) => w.id === id);
+    if (index === -1) return;
+    const w = state.wishes[index];
+    const newId = uid();
+    state.collection.push({
+      id: newId,
+      group: w.group,
+      member: w.member,
+      album: w.album,
+      type: "Standard",
+      state: "Très bon état",
+      origin: "Achat individuel",
+      price: w.max || 0,
+      date: "",
+      note: "Ajoutée depuis les souhaits",
+      photo: null,
+      favorite: false,
+    });
+    state.wishes.splice(index, 1);
+    lastAddedId = newId;
+    save();
+    showToast(`${w.member} est dans ta collection ✨`);
+    goTo("screen-collection");
+  }
+
+  /* =========================================================
+     Formulaires
+     ========================================================= */
+  $("wishForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    state.wishes.push({
+      id: uid(),
+      group: $("wGroup").value.trim(),
+      member: $("wMember").value.trim(),
+      album: $("wAlbum").value.trim(),
+      max: parseFloat($("wMax").value) || 0,
+      status: "À chercher",
+    });
+    save();
+    e.target.reset();
+    showToast("Souhait ajouté");
+    renderWishes();
+  });
+
+  $("cardForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const origin = e.target.querySelector('input[name="origin"]:checked').value;
+    const newId = uid();
+    state.collection.push({
+      id: newId,
+      group: $("group").value.trim(),
+      member: $("member").value.trim(),
+      album: $("album").value.trim(),
+      type: $("type").value,
+      state: $("state").value,
+      origin,
+      price: parseFloat($("price").value) || 0,
+      date: $("date").value,
+      note: $("note").value.trim(),
+      photo: pendingPhoto,
+      favorite: false,
+    });
+    lastAddedId = newId;
+    save();
+    resetForm();
+    goTo("screen-collection");
+    showToast("Carte ajoutée ✨");
+  });
+
+  /* =========================================================
+     Sauvegarde : export et import d'un fichier JSON
+     ========================================================= */
+  $("exportBtn").addEventListener("click", () => {
+    const data = {
+      app: "photocard-bank",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      collection: state.collection,
+      wishes: state.wishes,
+    };
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `photocard-bank-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast("Sauvegarde exportée");
+  });
+
+  $("importBtn").addEventListener("click", () => $("importFile").click());
+
+  $("importFile").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      if (!Array.isArray(data.collection) || !Array.isArray(data.wishes)) throw new Error("format");
+      state.collection = data.collection;
+      state.wishes = data.wishes;
+      save();
+      renderAll();
+      showToast("Sauvegarde importée ✓");
+    } catch {
+      showToast("Ce fichier n'est pas une sauvegarde valide");
+    }
+    e.target.value = "";
+  });
+
+  /* =========================================================
+     Démarrage
+     ========================================================= */
+  function renderAll() {
+    renderHome();
+    renderCollection();
+    renderWishes();
+  }
+
+  async function init() {
+    try {
+      const saved = await dbGet("state");
+      if (saved) {
+        state.collection = saved.collection || [];
+        state.wishes = saved.wishes || [];
+      }
+    } catch {
+      showToast("Stockage local indisponible");
+    }
+    renderAll();
+  }
+
+  init();
+</script>
+</body>
+</html>
